@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script defer src="face-api.min.js"></script>
+    <script defer type="module" src="script.js"></script>
+    <script src='./webcamjs/webcam.min.js'></script>
     <title>Face Recognition</title>
-    <script defer async src="./js/face-api.min.js"></script>
-    <script defer async src="./js/script.js"></script>
-    <script src='webcamjs/webcam.min.js'></script>
-
     <style>
         body {
             margin: 0;
@@ -15,9 +15,9 @@
             width: 100vw;
             height: 100vh;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            flex-direction: column;
+            flex-direction: row
         }
 
         canvas {
@@ -31,16 +31,29 @@
             width: 300px;
         }
 
+        .wrapper {
+            height: 100vh;
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column
+        }
     </style>
 </head>
 <body>
+    <div class="wrapper" id="wrapper1">
+        <div id="camera"></div>
+        <button onclick="takeSnapshot()">make photo</button>
+        <div id="result"></div>
+    </div>
 
-    <div id="camera"></div>
-    <button onclick="takeSnapshot()">make photo</button>
-    <div id="result"></div>
+    <div class="wrapper" id="wrapper2">
+        <input type="file" id="imageUpload">
+    </div>
 
+</body>
 <script>
-
     Webcam.set({
         width: 320,
         height: 240,
@@ -49,7 +62,49 @@
     });
     Webcam.attach('#camera');
 
-</script>
+    async function takeSnapshot() {
+        Webcam.snap(function (data_url) {
+            document.getElementById('result').innerHTML = '<img id="img_result" src="' + data_url + '"/>';
+        })
+        let newImg = document.getElementById('img_result');
+        let wrapper1 = document.getElementById('wrapper1');
+        wrapper1.append(newImg)
+        const container = document.createElement('div');
+        container.style.position = 'relative';
+        document.body.append(container);
+        const labeledFaceDescriptors = await loadLabeledImages();
+        const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+        let canvas;
+        if (canvas) canvas.remove();
+        container.append(newImg)
+        canvas = faceapi.createCanvasFromMedia(newImg);
+        container.append(canvas)
+        const displaySize = {width: newImg.width, height: newImg.height}
+        faceapi.matchDimensions(canvas, displaySize)
+        const detections = await faceapi.detectAllFaces(newImg).withFaceLandmarks().withFaceDescriptors();
+        // document.body.append(detection.length) //we understand how many faces on the picture
+        const resizeDetections = faceapi.resizeResults(detections, displaySize);
+        const results = resizeDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
+        results.forEach((result, i) => {
+            const box = resizeDetections[i].detection.box;
+            const drawBox = new faceapi.draw.DrawBox(box, {label: result.toString()})
+            drawBox.draw(canvas)
+        })
+    }
 
-</body>
+    function loadLabeledImages() {
+        const labels = ['Andrii Kosaniak', 'Baran Oleksandr', 'Black Widow', 'Captain America', 'Captain Marvel', 'Hawkeye', 'Jim Carrey', 'Jim Rhodes', 'Johnny Depp', 'Thor', 'Tony Stark'];
+        return Promise.all(
+            labels.map(async label => {
+                const descriptions = [];
+                for (let i = 1; i <= 2; i++) {
+                    const img = await faceapi.fetchImage(`./labeled_images/${label}/${i}.jpg`);
+                    const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                    descriptions.push(detections.descriptor);
+                }
+                return new faceapi.LabeledFaceDescriptors(label, descriptions);
+            })
+        )
+    }
+</script>
 </html>

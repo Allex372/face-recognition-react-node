@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"main": "webcam.js",
 	"scripts": {
-		"build": "build.sh"
+		"build": "./build.sh"
 	},
 	"repository": {
 		"type": "git",
@@ -27,6 +27,6 @@
 
 	},
 	"devDependencies": {
-
+		
 	}
 }

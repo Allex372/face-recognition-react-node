@@ -70,23 +70,22 @@ https://github.com/jhuckaby/webcamjs
 Host the `webcam.js` and `webcam.swf` files on your web server (both in the same directory), and drop in this HTML snippet:
 
 ```html
+	<script src="webcam.js"></script>
 
-<script src="webcam.js"></script>
+	<div id="my_camera" style="width:320px; height:240px;"></div>
+	<div id="my_result"></div>
 
-<div id="my_camera" style="width:320px; height:240px;"></div>
-<div id="my_result"></div>
+	<script language="JavaScript">
+		Webcam.attach( '#my_camera' );
+		
+		function take_snapshot() {
+			Webcam.snap( function(data_uri) {
+				document.getElementById('my_result').innerHTML = '<img src="'+data_uri+'"/>';
+			} );
+		}
+	</script>
 
-<script language="JavaScript">
-    Webcam.attach('#my_camera');
-
-    function take_snapshot() {
-        Webcam.snap(function (data_uri) {
-            document.getElementById('my_result').innerHTML = '<img src="' + data_uri + '"/>';
-        });
-    }
-</script>
-
-<a href="javascript:void(take_snapshot())">Take Snapshot</a>
+	<a href="javascript:void(take_snapshot())">Take Snapshot</a>
 ```
 
 This will create a live camera view in the `my_camera` DIV, and when the **Take Snapshot** link is clicked it will take a still snapshot, convert it to a JPEG, and deliver a Data URI which is inserted into the `my_result` DIV as a standard `<IMG SRC>` tag.
